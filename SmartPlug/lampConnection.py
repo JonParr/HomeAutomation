@@ -4,6 +4,13 @@ import serial
 import sys
 import time
 import socket
+import os
+
+pid = os.fork()
+
+if pid:
+	print 'Daemon forked with PID {}'.format(pid)
+	exit(0)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
