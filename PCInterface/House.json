@@ -1,0 +1,30 @@
+{
+    "housename" : "House",
+    "scalefactor":5,
+    "rooms":
+    [
+	{
+	    "name":"Bathroom",
+	    "dimensions":[15,0,25,20],
+	    "doors":
+	    [
+		{
+		    "accesses":["Kitchen","Bathroom"],
+		    "dimensions":[18,19,6,2]
+		}
+	    ]
+	},
+	{
+	    "name":"Kitchen",
+	    "dimensions":[0,20,40,30]
+	},
+	{
+	    "name":"Bedroom",
+	    "dimensions":[0,50,40,30]
+	},
+	{
+	    "name":"Living Room",
+	    "dimensions":[40,30,40,50]
+	}
+    ]
+}
