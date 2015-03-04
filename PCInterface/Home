@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+
+import sys
+import pygame
+import math
+import json
+
+black = (0,0,0)
+white = (255,255,255)
+grey = (100,100,100)
+blue = (0,0,128)
+red = (128,0,0)
+green = (0,128,0)
+door_colour = (50,50,50)
+screen_size = (640, 480)
+
+class Door:
+    def __init__(self, position, orientation):
+        self.position = position
+        self.orientation = orientation
+
+class Room:
+    def __init__(self, name, size):
+        self.name = name
+        self.rect = size
+        self.doors = []
+
+    def addDoor(self, position, orientation):
+        door = Door(position, orientation)
+        self.doors.append(door)
+
+    def __iter__(self):
+        for d in self.doors:
+            yield d
+
+class House:
+    def __init__(self,name):
+        self.name = name
+        self.rooms = []
+
+    def addRoom(self, room):
+        self.rooms.append(room)
+
+    def __iter__(self):
+        for r in self.rooms:
+            yield r
+
+def createScaledRect(rect, scale, offset):
+    (x, y, w, h) = rect
+    (offx,offy) = offset
+    return pygame.Rect(offx + x*scale,offy + y*scale,w*scale,h*scale)
+
+def main():
+
+    if len(sys.argv) < 2:
+        print ('Please provide JSON file describing house layout.')
+        exit(1)
+
+    house_description = open(sys.argv[1],'r')
+
+    if not house_description:
+        print ('Unable to open description of house')
+        exit(1)
+
+    desc = json.loads(house_description.read())
+    house_description.close()
+
+    house = House(desc['housename'])
+    scale_factor = desc['scalefactor']
+    offset = (100,50)
+
+    for r in desc['rooms']:
+        rect = (r['dimensions'][0],r['dimensions'][1],r['dimensions'][2],r['dimensions'][3])
+        size = createScaledRect(rect, scale_factor, offset)
+        room = Room(r['name'],size)
+        if 'doors' in r:
+            for d in r['doors']:
+                rect = (d['dimensions'][0],d['dimensions'][1],d['dimensions'][2],d['dimensions'][3])
+                room.addDoor(createScaledRect(rect,scale_factor,(0,0)),'')
+                
+        house.addRoom(room)
+
+    pygame.init()
+    screen = pygame.display.set_mode(screen_size)
+
+    pygame.font.init()
+    font = pygame.font.Font(None, 36)
+    font_small = pygame.font.Font(None, 22)
+    text = font.render(house.name, 1, (255, 0, 0))
+
+    Running = True
+
+    selection = None
+
+    clock = pygame.time.Clock()
+    numTicks = clock.tick()
+
+    while Running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
+                    Running=False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mousePos = pygame.mouse.get_pos()
+                newSel = None
+                for r in house:
+                    if r.rect.collidepoint(mousePos):
+                        newSel = r
+                        break
+                selection = newSel
+
+        screen.fill(grey)
+
+        textpos = text.get_rect()
+        textpos.centerx = screen.get_rect().centerx
+        screen.blit(text, textpos)
+
+        for room in house:
+            if room == selection:
+                roomColour = green
+            else:
+                roomColour = red
+            screen.fill(white, room.rect)
+            pygame.draw.rect(screen, roomColour, room.rect, 3)
+            room_name = font_small.render(room.name, False, (255, 0, 0))
+            textpos = room_name.get_rect()
+            textpos.centerx = room.rect.centerx
+            textpos.centery = room.rect.centery
+            screen.blit(room_name, textpos)
+        for room in house:
+            for door in room:
+                doorPosition = room.rect.copy()
+                doorPosition.x += door.position.x
+                doorPosition.y += door.position.y
+                doorPosition.width = door.position.width
+                doorPosition.height = door.position.height
+                pygame.draw.rect(screen, door_colour, doorPosition, 2)
+                #screen.fill(door_colour, doorPosition)
+
+        pygame.display.flip()
+
+        numTicks += clock.tick(30)
+
+    print ('Goodbye!')
+
+if __name__ == '__main__':
+    main()
